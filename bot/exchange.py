@@ -1,5 +1,5 @@
 import ccxt
-from bot.config import API_KEY, API_SECRET
+from config import API_KEY, API_SECRET
 
 def get_exchange():
     return ccxt.kraken({
