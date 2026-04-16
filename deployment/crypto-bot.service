@@ -1,0 +1,13 @@
+[Unit]
+Description=Kraken Adaptive Crypto Bot
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/kraken-adaptive-bot
+ExecStart=/usr/bin/python3 /home/ubuntu/kraken-adaptive-bot/bot/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
