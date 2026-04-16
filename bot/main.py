@@ -1,5 +1,6 @@
 import time
 import pandas as pd
+from paper import PaperTrader
 
 from exchange import get_exchange
 from config import SYMBOL, TIMEFRAME, TRADE_USD
@@ -11,6 +12,7 @@ exchange = get_exchange()
 in_position = False
 entry_price = None
 
+paper = PaperTrader(starting_balance=100)
 
 def fetch_data():
     ohlcv = exchange.fetch_ohlcv(SYMBOL, timeframe=TIMEFRAME, limit=50)
@@ -26,13 +28,13 @@ def get_balance():
 
 
 def buy(price):
-    logger.info(f"BUY signal at {price}")
-    # exchange.create_market_buy_order(SYMBOL, TRADE_USD / price)
+    result = paper.buy(price, TRADE_USD)
+    logger.info(result)
 
 
 def sell(price):
-    logger.info(f"SELL signal at {price}")
-    # exchange.create_market_sell_order(SYMBOL, "all")
+    result = paper.sell(price)
+    logger.info(result)
 
 
 while True:
@@ -48,6 +50,9 @@ while True:
 
         elif signal == "SELL":
             sell(price)
+
+        status = paper.status()
+        logger.info(f"Balance: {status['balance']:.2f} | Position: {status['position']}")
 
         time.sleep(60)
 
