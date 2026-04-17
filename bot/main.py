@@ -28,7 +28,7 @@ def get_balance():
 
 
 def buy(price):
-    result = paper.buy(price, TRADE_USD)
+    result = paper.buy(SYMBOL, price, TRADE_USD)
     logger.info(result)
 
 
