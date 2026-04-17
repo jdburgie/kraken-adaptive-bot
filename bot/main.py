@@ -40,7 +40,12 @@ def sell(price):
 while True:
     try:
         df = fetch_data()
-        signal = generate_signal(df)
+        
+        signal = generate_signal(
+            df,
+            in_position=(paper.position is not None)
+        )
+
         price = df['close'].iloc[-1]
 
         logger.info(f"Signal: {signal} | Price: {price}")
