@@ -11,14 +11,16 @@ def generate_signal(df):
 
     # ENTRY CONDITIONS
     if (
-        price_change < -0.03 and
-        latest['rsi'] < 35 and
-        vol > 0.01
+        price_change < -0.02 and   # was -0.03
+        latest['rsi'] < 40 and     # was 35
+        vol > 0.005                # was stricter
     ):
         return "BUY"
 
-    # EXIT CONDITIONS
-    if latest['rsi'] > 65 or price_change > 0.05:
-        return "SELL"
+    if latest['rsi'] < 45 and price_change < -0.015:
+        return "BUY"
 
+    if latest['rsi'] > 60 or price_change > 0.03:
+        return "SELL"
+    
     return "HOLD"
