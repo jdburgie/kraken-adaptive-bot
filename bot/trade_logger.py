@@ -3,9 +3,10 @@ import json
 import os
 from datetime import datetime
 
-CSV_FILE = "trades.csv"
-JSON_FILE = "trades.json"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+CSV_FILE = os.path.join(BASE_DIR, "trades.csv")
+JSON_FILE = os.path.join(BASE_DIR, "trades.json")
 
 def log_trade(trade):
     trade["timestamp"] = datetime.utcnow().isoformat()
