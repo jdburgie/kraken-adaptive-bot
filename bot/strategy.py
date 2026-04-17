@@ -1,4 +1,5 @@
 from indicators import rsi, volatility
+from logger import logger
 
 def generate_signal(df):
     df = df.copy()
@@ -23,5 +24,6 @@ def generate_signal(df):
     if latest['rsi'] > 60 or price_change > 0.03:
         return "SELL"
     
-    print(f"DEBUG → change: {price_change:.4f}, RSI: {latest['rsi']:.2f}, vol: {vol:.4f}")
+    logger.info(f"DEBUG → change: {price_change:.4f}, RSI: {latest['rsi']:.2f}, vol: {vol:.4f}")
+
     return "HOLD"
