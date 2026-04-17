@@ -50,11 +50,15 @@ while True:
 
         elif signal == "SELL":
             sell(price)
+        
+        else:
+            logger.info("Heartbeat: loop running")
 
         status = paper.status()
         logger.info(f"Balance: {status['balance']:.2f} | Position: {status['position']}")
 
-        time.sleep(60)
+        # time.sleep(60)
+        time.sleep(10)
 
     except Exception as e:
         logger.error(f"Error: {e}")
