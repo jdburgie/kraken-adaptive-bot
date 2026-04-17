@@ -21,7 +21,7 @@ class PaperTrader:
 
         return f"BOUGHT {amount:.6f} at {price}"
 
-    def sell(self, price):
+    def sell(self, symbol, price):
         if self.position is None:
             return "No position to sell"
 
@@ -34,7 +34,7 @@ class PaperTrader:
         self.balance += value
 
         trade = {
-            "symbol": "SOL/USD",
+            "symbol": symbol,
             "entry": entry,
             "exit": price,
             "amount": amount,

@@ -12,7 +12,6 @@ def generate_signal(df):
     price_change = (latest['close'] - prev['close']) / prev['close']
 
     # DEBUG LOG
-    from bot.logger import logger
     logger.info(f"DEBUG → change: {price_change:.4f}, RSI: {latest['rsi']:.2f}")
 
     # VERY LOOSE CONDITIONS (FOR TESTING)
