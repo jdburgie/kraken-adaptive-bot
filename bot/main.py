@@ -45,12 +45,12 @@ while True:
 
         logger.info(f"Signal: {signal} | Price: {price}")
 
-        if signal == "BUY" and not paper.position:
+        if signal == "BUY" and paper.position is None:
             buy(price)
 
-        elif signal == "SELL" and paper.position:
+        elif signal == "SELL" and paper.position is not None:
             sell(price)
-        
+
         else:
             logger.info("Heartbeat: loop running")
 

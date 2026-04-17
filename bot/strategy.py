@@ -15,7 +15,8 @@ def generate_signal(df):
     logger.info(f"DEBUG → change: {price_change:.4f}, RSI: {latest['rsi']:.2f}")
 
     # VERY LOOSE CONDITIONS (FOR TESTING)
-    if price_change < -0.005 or latest['rsi'] < 45:
+    if price_change < 0.002 or latest['rsi'] < 60:
+    # if price_change < -0.005 or latest['rsi'] < 45:
         return "BUY"
 
     if price_change > 0.005 or latest['rsi'] > 55:
