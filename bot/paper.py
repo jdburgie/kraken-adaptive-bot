@@ -6,7 +6,7 @@ class PaperTrader:
         self.position = None
         self.trade_history = []
 
-    def buy(self, price, usd_amount):
+    def buy(self, symbol, price, usd_amount):
         if self.position is not None:
             return "Already in position"
 
