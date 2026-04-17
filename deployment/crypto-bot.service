@@ -8,6 +8,8 @@ WorkingDirectory=/home/ubuntu/kraken-adaptive-bot
 ExecStart=/usr/bin/python3 /home/ubuntu/kraken-adaptive-bot/bot/main.py
 Restart=always
 RestartSec=5
+StartLimitBurst=10
+StartLimitIntervalSec=60
 
 [Install]
 WantedBy=multi-user.target

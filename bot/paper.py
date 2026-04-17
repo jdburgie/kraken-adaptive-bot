@@ -1,3 +1,5 @@
+from trade_logger import log_trade
+
 class PaperTrader:
     def __init__(self, starting_balance=100):
         self.balance = starting_balance
@@ -32,13 +34,16 @@ class PaperTrader:
         self.balance += value
 
         trade = {
+            "symbol": "SOL/USD",
             "entry": entry,
             "exit": price,
+            "amount": amount,
             "pnl": pnl
         }
 
-        self.trade_history.append(trade)
+        log_trade(trade)
 
+        self.trade_history.append(trade)
         self.position = None
 
         return f"SOLD at {price} | PnL: {pnl:.2f}"
