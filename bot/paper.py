@@ -13,6 +13,7 @@ class PaperTrader:
         amount = usd_amount / price
 
         self.position = {
+            "symbol": symbol,
             "entry_price": price,
             "amount": amount
         }

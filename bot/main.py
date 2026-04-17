@@ -33,7 +33,7 @@ def buy(price):
 
 
 def sell(price):
-    result = paper.sell(price)
+    result = paper.sell(SYMBOL, price)
     logger.info(result)
 
 
