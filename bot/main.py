@@ -45,10 +45,10 @@ while True:
 
         logger.info(f"Signal: {signal} | Price: {price}")
 
-        if signal == "BUY":
+        if signal == "BUY" and not paper.position:
             buy(price)
 
-        elif signal == "SELL":
+        elif signal == "SELL" and paper.position:
             sell(price)
         
         else:
