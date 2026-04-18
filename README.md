@@ -21,13 +21,15 @@ cp .env.example.txt .env
 ## Download Candles
 
 ```bash
-python3 scripts/download_ohlcv.py --symbol SOL/USD --timeframe 5m --days 180 --output data/sol_ohlcv.csv
+python3 scripts/download_ohlcv.py --exchange binance --symbol SOL/USDT --timeframe 5m --days 365 --output data/sol_5m_365d.csv
+python3 scripts/download_ohlcv.py --exchange binance --symbol BTC/USDT --timeframe 1h --days 365 --output data/btc_1h_365d.csv
+python3 scripts/download_ohlcv.py --exchange binance --symbol ETH/USDT --timeframe 1h --days 365 --output data/eth_1h_365d.csv
 ```
 
 ## Backtest
 
 ```bash
-python3 backtest/backtest.py data/sol_ohlcv.csv --starting-balance 1000 --risk-pct 0.01 --fee-rate 0.0026
+python3 backtest/backtest.py data/btc_1h_365d.csv --starting-balance 1000 --risk-pct 0.01 --fee-rate 0.0026
 ```
 
 Do not deploy live money until the strategy has been tested across multiple
