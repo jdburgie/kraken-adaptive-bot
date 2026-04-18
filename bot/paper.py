@@ -1,4 +1,7 @@
-from trade_logger import log_trade
+try:
+    from bot.trade_logger import log_trade
+except ImportError:
+    from trade_logger import log_trade
 
 class PaperTrader:
     def __init__(self, starting_balance=100):
@@ -6,7 +9,7 @@ class PaperTrader:
         self.position = None
         self.trade_history = []
 
-    def buy(self, symbol, price, usd_amount):
+    def buy(self, symbol, price, usd_amount, stop=None, target=None):
         if self.position is not None:
             return "Already in position"
 
@@ -15,7 +18,9 @@ class PaperTrader:
         self.position = {
             "symbol": symbol,
             "entry_price": price,
-            "amount": amount
+            "amount": amount,
+            "stop": stop,
+            "target": target,
         }
 
         self.balance -= usd_amount
@@ -39,7 +44,9 @@ class PaperTrader:
             "entry": entry,
             "exit": price,
             "amount": amount,
-            "pnl": pnl
+            "pnl": pnl,
+            "stop": self.position.get("stop"),
+            "target": self.position.get("target"),
         }
 
         log_trade(trade)
