@@ -14,13 +14,13 @@ class TradeSetup:
     reason: str
 
 
-def find_trend_pullback_entry(df, reward_risk=2.0):
+def evaluate_trend_pullback_entry(df, reward_risk=2.0):
     if len(df) < 200:
-        return None
+        return None, "not_enough_candles"
 
     regime = classify_regime(df)
     if regime != Regime.UPTREND:
-        return None
+        return None, f"regime_{regime.value.lower()}"
 
     enriched = add_core_indicators(df)
     latest = enriched.iloc[-1]
@@ -28,31 +28,48 @@ def find_trend_pullback_entry(df, reward_risk=2.0):
 
     required = ["ema20", "atr14", "volume_sma20"]
     if latest[required].isna().any():
-        return None
+        return None, "indicators_not_ready"
 
     touched_ema20 = latest["low"] <= latest["ema20"] <= latest["high"]
     closed_green = latest["close"] > latest["open"]
     reclaimed_previous_high = latest["close"] > previous["high"]
     volume_confirmed = latest["volume"] > latest["volume_sma20"]
 
-    if not all([touched_ema20, closed_green, reclaimed_previous_high, volume_confirmed]):
-        return None
+    if not touched_ema20:
+        return None, "no_ema20_pullback"
+
+    if not closed_green:
+        return None, "not_green_candle"
+
+    if not reclaimed_previous_high:
+        return None, "no_prior_high_reclaim"
+
+    if not volume_confirmed:
+        return None, "no_volume_confirmation"
 
     entry = float(latest["close"])
     stop = float(entry - latest["atr14"])
     target = float(entry + reward_risk * latest["atr14"])
 
     if stop <= 0 or stop >= entry or target <= entry:
-        return None
+        return None, "invalid_atr_levels"
 
-    return TradeSetup(
-        side="BUY",
-        entry=entry,
-        stop=stop,
-        target=target,
-        regime=regime.value,
-        reason="uptrend pullback reclaimed prior high with volume confirmation",
+    return (
+        TradeSetup(
+            side="BUY",
+            entry=entry,
+            stop=stop,
+            target=target,
+            regime=regime.value,
+            reason="uptrend pullback reclaimed prior high with volume confirmation",
+        ),
+        "entry",
     )
+
+
+def find_trend_pullback_entry(df, reward_risk=2.0):
+    setup, _ = evaluate_trend_pullback_entry(df, reward_risk=reward_risk)
+    return setup
 
 
 def generate_signal(df, in_position=False):

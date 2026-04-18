@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+from collections import Counter
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -8,7 +9,7 @@ if PROJECT_ROOT not in sys.path:
 
 from bot.market_data import load_ohlcv_csv
 from bot.risk import units_for_fixed_risk
-from bot.strategy import find_trend_pullback_entry
+from bot.strategy import evaluate_trend_pullback_entry
 from backtest.metrics import summarize_trades
 
 
@@ -20,17 +21,21 @@ def run_backtest(
     fee_rate=0.0026,
     max_hold_bars=20,
     min_net_reward_r=1.0,
+    collect_diagnostics=False,
 ):
     balance = starting_balance
     trades = []
+    diagnostics = Counter()
     warmup_bars = 250
     i = warmup_bars
 
     while i < len(df) - 1:
         window = df.iloc[: i + 1]
-        setup = find_trend_pullback_entry(window)
+        setup, rejection_reason = evaluate_trend_pullback_entry(window)
 
         if not setup:
+            if collect_diagnostics:
+                diagnostics[rejection_reason] += 1
             i += 1
             continue
 
@@ -42,6 +47,8 @@ def run_backtest(
             max_position_pct=max_position_pct,
         )
         if units <= 0:
+            if collect_diagnostics:
+                diagnostics["invalid_position_size"] += 1
             i += 1
             continue
 
@@ -52,6 +59,8 @@ def run_backtest(
         net_target_profit = (setup.target - setup.entry) * units - entry_fee - target_fee
 
         if net_stop_loss <= 0 or net_target_profit / net_stop_loss < min_net_reward_r:
+            if collect_diagnostics:
+                diagnostics["poor_net_reward_after_fees"] += 1
             i += 1
             continue
 
@@ -106,7 +115,7 @@ def run_backtest(
 
         i = int(exit_index) + 1
 
-    return trades, summarize_trades(trades, starting_balance)
+    return trades, summarize_trades(trades, starting_balance), diagnostics
 
 
 def main():
@@ -118,10 +127,11 @@ def main():
     parser.add_argument("--fee-rate", type=float, default=0.0026)
     parser.add_argument("--max-hold-bars", type=int, default=20)
     parser.add_argument("--min-net-reward-r", type=float, default=1.0)
+    parser.add_argument("--diagnostics", action="store_true")
     args = parser.parse_args()
 
     df = load_ohlcv_csv(args.csv)
-    trades, metrics = run_backtest(
+    trades, metrics, diagnostics = run_backtest(
         df,
         starting_balance=args.starting_balance,
         risk_pct=args.risk_pct,
@@ -129,6 +139,7 @@ def main():
         fee_rate=args.fee_rate,
         max_hold_bars=args.max_hold_bars,
         min_net_reward_r=args.min_net_reward_r,
+        collect_diagnostics=args.diagnostics,
     )
 
     print(f"Trades: {metrics['trades']}")
@@ -147,6 +158,11 @@ def main():
                 f"{trade['entry_time']} -> {trade['exit_time']} | "
                 f"{trade['exit_reason']} | PnL {trade['pnl']:.2f}"
             )
+
+    if args.diagnostics:
+        print("Diagnostics:")
+        for reason, count in diagnostics.most_common():
+            print(f"{reason}: {count}")
 
 
 if __name__ == "__main__":
