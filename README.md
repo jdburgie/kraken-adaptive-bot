@@ -14,20 +14,20 @@ the important work happens in the backtester before a strategy is trusted.
 ## Setup
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 cp .env.example.txt .env
 ```
 
 ## Download Candles
 
 ```bash
-python scripts/download_ohlcv.py --symbol SOL/USD --timeframe 5m --days 180 --output data/sol_ohlcv.csv
+python3 scripts/download_ohlcv.py --symbol SOL/USD --timeframe 5m --days 180 --output data/sol_ohlcv.csv
 ```
 
 ## Backtest
 
 ```bash
-python backtest/backtest.py data/sol_ohlcv.csv --starting-balance 1000 --risk-pct 0.01 --fee-rate 0.0026
+python3 backtest/backtest.py data/sol_ohlcv.csv --starting-balance 1000 --risk-pct 0.01 --fee-rate 0.0026
 ```
 
 Do not deploy live money until the strategy has been tested across multiple
