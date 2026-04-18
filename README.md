@@ -6,6 +6,7 @@ A modular crypto trading bot for Kraken using an RSI + volatility strategy.
 - Kraken spot exchange integration via `ccxt`
 - Adaptive buy/sell/hold signals based on momentum and volatility
 - Configurable `DRY_RUN` mode for safe local testing (default: enabled)
+- Simple risk helper functions for position sizing and stop/take levels
 - Local script entrypoint for development
 
 ## Setup
