@@ -14,7 +14,13 @@ class TradeSetup:
     reason: str
 
 
-def evaluate_trend_pullback_entry(df, reward_risk=2.0):
+def evaluate_trend_pullback_entry(
+    df,
+    reward_risk=2.0,
+    pullback_tolerance_pct=0.0,
+    volume_multiplier=1.0,
+    require_prior_high_reclaim=True,
+):
     if len(df) < 200:
         return None, "not_enough_candles"
 
@@ -30,10 +36,11 @@ def evaluate_trend_pullback_entry(df, reward_risk=2.0):
     if latest[required].isna().any():
         return None, "indicators_not_ready"
 
-    touched_ema20 = latest["low"] <= latest["ema20"] <= latest["high"]
+    pullback_ceiling = latest["ema20"] * (1 + pullback_tolerance_pct)
+    touched_ema20 = latest["low"] <= pullback_ceiling and latest["high"] >= latest["ema20"]
     closed_green = latest["close"] > latest["open"]
     reclaimed_previous_high = latest["close"] > previous["high"]
-    volume_confirmed = latest["volume"] > latest["volume_sma20"]
+    volume_confirmed = latest["volume"] > latest["volume_sma20"] * volume_multiplier
 
     if not touched_ema20:
         return None, "no_ema20_pullback"
@@ -41,7 +48,7 @@ def evaluate_trend_pullback_entry(df, reward_risk=2.0):
     if not closed_green:
         return None, "not_green_candle"
 
-    if not reclaimed_previous_high:
+    if require_prior_high_reclaim and not reclaimed_previous_high:
         return None, "no_prior_high_reclaim"
 
     if not volume_confirmed:
@@ -67,8 +74,20 @@ def evaluate_trend_pullback_entry(df, reward_risk=2.0):
     )
 
 
-def find_trend_pullback_entry(df, reward_risk=2.0):
-    setup, _ = evaluate_trend_pullback_entry(df, reward_risk=reward_risk)
+def find_trend_pullback_entry(
+    df,
+    reward_risk=2.0,
+    pullback_tolerance_pct=0.0,
+    volume_multiplier=1.0,
+    require_prior_high_reclaim=True,
+):
+    setup, _ = evaluate_trend_pullback_entry(
+        df,
+        reward_risk=reward_risk,
+        pullback_tolerance_pct=pullback_tolerance_pct,
+        volume_multiplier=volume_multiplier,
+        require_prior_high_reclaim=require_prior_high_reclaim,
+    )
     return setup
 
 

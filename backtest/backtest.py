@@ -21,6 +21,10 @@ def run_backtest(
     fee_rate=0.0026,
     max_hold_bars=20,
     min_net_reward_r=1.0,
+    reward_risk=2.0,
+    pullback_tolerance_pct=0.0,
+    volume_multiplier=1.0,
+    require_prior_high_reclaim=True,
     collect_diagnostics=False,
 ):
     balance = starting_balance
@@ -31,7 +35,13 @@ def run_backtest(
 
     while i < len(df) - 1:
         window = df.iloc[: i + 1]
-        setup, rejection_reason = evaluate_trend_pullback_entry(window)
+        setup, rejection_reason = evaluate_trend_pullback_entry(
+            window,
+            reward_risk=reward_risk,
+            pullback_tolerance_pct=pullback_tolerance_pct,
+            volume_multiplier=volume_multiplier,
+            require_prior_high_reclaim=require_prior_high_reclaim,
+        )
 
         if not setup:
             if collect_diagnostics:
@@ -127,6 +137,10 @@ def main():
     parser.add_argument("--fee-rate", type=float, default=0.0026)
     parser.add_argument("--max-hold-bars", type=int, default=20)
     parser.add_argument("--min-net-reward-r", type=float, default=1.0)
+    parser.add_argument("--reward-risk", type=float, default=2.0)
+    parser.add_argument("--pullback-tolerance-pct", type=float, default=0.0)
+    parser.add_argument("--volume-multiplier", type=float, default=1.0)
+    parser.add_argument("--no-prior-high-reclaim", action="store_true")
     parser.add_argument("--diagnostics", action="store_true")
     args = parser.parse_args()
 
@@ -139,6 +153,10 @@ def main():
         fee_rate=args.fee_rate,
         max_hold_bars=args.max_hold_bars,
         min_net_reward_r=args.min_net_reward_r,
+        reward_risk=args.reward_risk,
+        pullback_tolerance_pct=args.pullback_tolerance_pct,
+        volume_multiplier=args.volume_multiplier,
+        require_prior_high_reclaim=not args.no_prior_high_reclaim,
         collect_diagnostics=args.diagnostics,
     )
 

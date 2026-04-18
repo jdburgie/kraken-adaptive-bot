@@ -36,3 +36,11 @@ expectancy after fees.
 
 The backtester caps position size to available cash by default. To test smaller
 cash exposure, lower `--max-position-pct`; for example `--max-position-pct 0.25`.
+
+Useful research flags:
+
+```bash
+python3 backtest/backtest.py data/sol_ohlcv.csv --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-tolerance-pct 0.002 --reward-risk 3 --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-tolerance-pct 0.003 --no-prior-high-reclaim --volume-multiplier 0.8 --diagnostics
+```
