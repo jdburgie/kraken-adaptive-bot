@@ -16,8 +16,10 @@ def run_backtest(
     df,
     starting_balance=1000,
     risk_pct=0.01,
+    max_position_pct=1.0,
     fee_rate=0.0026,
     max_hold_bars=20,
+    min_net_reward_r=1.0,
 ):
     balance = starting_balance
     trades = []
@@ -32,12 +34,27 @@ def run_backtest(
             i += 1
             continue
 
-        units = units_for_fixed_risk(balance, setup.entry, setup.stop, risk_pct)
+        units = units_for_fixed_risk(
+            balance,
+            setup.entry,
+            setup.stop,
+            risk_pct,
+            max_position_pct=max_position_pct,
+        )
         if units <= 0:
             i += 1
             continue
 
         entry_fee = setup.entry * units * fee_rate
+        stop_fee = setup.stop * units * fee_rate
+        target_fee = setup.target * units * fee_rate
+        net_stop_loss = abs((setup.stop - setup.entry) * units - entry_fee - stop_fee)
+        net_target_profit = (setup.target - setup.entry) * units - entry_fee - target_fee
+
+        if net_stop_loss <= 0 or net_target_profit / net_stop_loss < min_net_reward_r:
+            i += 1
+            continue
+
         exit_price = None
         exit_reason = None
         exit_index = None
@@ -97,8 +114,10 @@ def main():
     parser.add_argument("csv", help="Path to an OHLCV CSV with time/open/high/low/close/volume columns.")
     parser.add_argument("--starting-balance", type=float, default=1000)
     parser.add_argument("--risk-pct", type=float, default=0.01)
+    parser.add_argument("--max-position-pct", type=float, default=1.0)
     parser.add_argument("--fee-rate", type=float, default=0.0026)
     parser.add_argument("--max-hold-bars", type=int, default=20)
+    parser.add_argument("--min-net-reward-r", type=float, default=1.0)
     args = parser.parse_args()
 
     df = load_ohlcv_csv(args.csv)
@@ -106,8 +125,10 @@ def main():
         df,
         starting_balance=args.starting_balance,
         risk_pct=args.risk_pct,
+        max_position_pct=args.max_position_pct,
         fee_rate=args.fee_rate,
         max_hold_bars=args.max_hold_bars,
+        min_net_reward_r=args.min_net_reward_r,
     )
 
     print(f"Trades: {metrics['trades']}")

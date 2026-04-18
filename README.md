@@ -33,3 +33,6 @@ python3 backtest/backtest.py data/sol_ohlcv.csv --starting-balance 1000 --risk-p
 Do not deploy live money until the strategy has been tested across multiple
 assets and market regimes with acceptable profit factor, drawdown, and
 expectancy after fees.
+
+The backtester caps position size to available cash by default. To test smaller
+cash exposure, lower `--max-position-pct`; for example `--max-position-pct 0.25`.
