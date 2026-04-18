@@ -23,6 +23,7 @@ def run_backtest(
     min_net_reward_r=1.0,
     reward_risk=2.0,
     pullback_tolerance_pct=0.0,
+    pullback_lookback_bars=1,
     volume_multiplier=1.0,
     require_prior_high_reclaim=True,
     collect_diagnostics=False,
@@ -39,6 +40,7 @@ def run_backtest(
             window,
             reward_risk=reward_risk,
             pullback_tolerance_pct=pullback_tolerance_pct,
+            pullback_lookback_bars=pullback_lookback_bars,
             volume_multiplier=volume_multiplier,
             require_prior_high_reclaim=require_prior_high_reclaim,
         )
@@ -139,6 +141,7 @@ def main():
     parser.add_argument("--min-net-reward-r", type=float, default=1.0)
     parser.add_argument("--reward-risk", type=float, default=2.0)
     parser.add_argument("--pullback-tolerance-pct", type=float, default=0.0)
+    parser.add_argument("--pullback-lookback-bars", type=int, default=1)
     parser.add_argument("--volume-multiplier", type=float, default=1.0)
     parser.add_argument("--no-prior-high-reclaim", action="store_true")
     parser.add_argument("--diagnostics", action="store_true")
@@ -155,6 +158,7 @@ def main():
         min_net_reward_r=args.min_net_reward_r,
         reward_risk=args.reward_risk,
         pullback_tolerance_pct=args.pullback_tolerance_pct,
+        pullback_lookback_bars=args.pullback_lookback_bars,
         volume_multiplier=args.volume_multiplier,
         require_prior_high_reclaim=not args.no_prior_high_reclaim,
         collect_diagnostics=args.diagnostics,

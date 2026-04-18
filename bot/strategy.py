@@ -18,6 +18,7 @@ def evaluate_trend_pullback_entry(
     df,
     reward_risk=2.0,
     pullback_tolerance_pct=0.0,
+    pullback_lookback_bars=1,
     volume_multiplier=1.0,
     require_prior_high_reclaim=True,
 ):
@@ -36,8 +37,10 @@ def evaluate_trend_pullback_entry(
     if latest[required].isna().any():
         return None, "indicators_not_ready"
 
-    pullback_ceiling = latest["ema20"] * (1 + pullback_tolerance_pct)
-    touched_ema20 = latest["low"] <= pullback_ceiling and latest["high"] >= latest["ema20"]
+    pullback_lookback_bars = max(1, int(pullback_lookback_bars))
+    recent = enriched.tail(pullback_lookback_bars)
+    pullback_ceiling = recent["ema20"] * (1 + pullback_tolerance_pct)
+    touched_ema20 = (recent["low"] <= pullback_ceiling).any()
     closed_green = latest["close"] > latest["open"]
     reclaimed_previous_high = latest["close"] > previous["high"]
     volume_confirmed = latest["volume"] > latest["volume_sma20"] * volume_multiplier
@@ -78,6 +81,7 @@ def find_trend_pullback_entry(
     df,
     reward_risk=2.0,
     pullback_tolerance_pct=0.0,
+    pullback_lookback_bars=1,
     volume_multiplier=1.0,
     require_prior_high_reclaim=True,
 ):
@@ -85,6 +89,7 @@ def find_trend_pullback_entry(
         df,
         reward_risk=reward_risk,
         pullback_tolerance_pct=pullback_tolerance_pct,
+        pullback_lookback_bars=pullback_lookback_bars,
         volume_multiplier=volume_multiplier,
         require_prior_high_reclaim=require_prior_high_reclaim,
     )
