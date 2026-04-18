@@ -20,6 +20,10 @@ cp .env.example.txt .env
 
 ## Download Candles
 
+Binance may return HTTP 451 from restricted locations. The downloader now tries
+US-accessible fallback exchanges and USD/USDC quote pairs automatically, so the
+examples below work even when `SOL/USDT` is not available on the selected venue.
+
 ```bash
 python3 scripts/download_ohlcv.py --exchange binance --symbol SOL/USDT --timeframe 5m --days 365 --output data/sol_5m_365d.csv
 python3 scripts/download_ohlcv.py --exchange binance --symbol BTC/USDT --timeframe 1h --days 365 --output data/btc_1h_365d.csv
