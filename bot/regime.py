@@ -14,7 +14,8 @@ def classify_regime(df, trend_tolerance=0.001):
     if len(df) < 200:
         return Regime.UNKNOWN
 
-    with_indicators = add_core_indicators(df)
+    required = {"ema50", "ema200"}
+    with_indicators = df if required.issubset(df.columns) else add_core_indicators(df)
     latest = with_indicators.iloc[-1]
 
     ema50 = latest["ema50"]

@@ -9,6 +9,7 @@ if PROJECT_ROOT not in sys.path:
 
 from bot.market_data import load_ohlcv_csv
 from bot.risk import units_for_fixed_risk
+from bot.indicators import add_core_indicators
 from bot.strategy import evaluate_trend_pullback_entry
 from backtest.metrics import summarize_trades
 
@@ -26,8 +27,13 @@ def run_backtest(
     pullback_lookback_bars=1,
     volume_multiplier=1.0,
     require_prior_high_reclaim=True,
+    min_ema50_slope_pct=0.001,
+    ema_slope_lookback_bars=24,
+    max_extension_atr=0.75,
+    min_body_atr=0.10,
     collect_diagnostics=False,
 ):
+    df = add_core_indicators(df)
     balance = starting_balance
     trades = []
     diagnostics = Counter()
@@ -43,6 +49,10 @@ def run_backtest(
             pullback_lookback_bars=pullback_lookback_bars,
             volume_multiplier=volume_multiplier,
             require_prior_high_reclaim=require_prior_high_reclaim,
+            min_ema50_slope_pct=min_ema50_slope_pct,
+            ema_slope_lookback_bars=ema_slope_lookback_bars,
+            max_extension_atr=max_extension_atr,
+            min_body_atr=min_body_atr,
         )
 
         if not setup:
@@ -144,6 +154,10 @@ def main():
     parser.add_argument("--pullback-lookback-bars", type=int, default=1)
     parser.add_argument("--volume-multiplier", type=float, default=1.0)
     parser.add_argument("--no-prior-high-reclaim", action="store_true")
+    parser.add_argument("--min-ema50-slope-pct", type=float, default=0.001)
+    parser.add_argument("--ema-slope-lookback-bars", type=int, default=24)
+    parser.add_argument("--max-extension-atr", type=float, default=0.75)
+    parser.add_argument("--min-body-atr", type=float, default=0.10)
     parser.add_argument("--diagnostics", action="store_true")
     args = parser.parse_args()
 
@@ -161,6 +175,10 @@ def main():
         pullback_lookback_bars=args.pullback_lookback_bars,
         volume_multiplier=args.volume_multiplier,
         require_prior_high_reclaim=not args.no_prior_high_reclaim,
+        min_ema50_slope_pct=args.min_ema50_slope_pct,
+        ema_slope_lookback_bars=args.ema_slope_lookback_bars,
+        max_extension_atr=args.max_extension_atr,
+        min_body_atr=args.min_body_atr,
         collect_diagnostics=args.diagnostics,
     )
 
