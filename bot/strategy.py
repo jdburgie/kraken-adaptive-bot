@@ -21,6 +21,7 @@ def evaluate_trend_pullback_entry(
     pullback_lookback_bars=1,
     volume_multiplier=1.0,
     require_prior_high_reclaim=True,
+    breakout_lookback_bars=6,
     min_ema50_slope_pct=0.001,
     ema_slope_lookback_bars=24,
     max_extension_atr=0.75,
@@ -91,6 +92,15 @@ def evaluate_trend_pullback_entry(
     if extension_atr > max_extension_atr:
         return None, "entry_too_extended"
 
+    breakout_lookback_bars = max(0, int(breakout_lookback_bars))
+    if breakout_lookback_bars:
+        if len(enriched) <= breakout_lookback_bars:
+            return None, "not_enough_breakout_history"
+
+        prior_high = enriched["high"].iloc[-1 - breakout_lookback_bars : -1].max()
+        if latest["close"] <= prior_high:
+            return None, "no_local_high_breakout"
+
     entry = float(latest["close"])
     stop = float(entry - latest["atr14"])
     target = float(entry + reward_risk * latest["atr14"])
@@ -118,6 +128,7 @@ def find_trend_pullback_entry(
     pullback_lookback_bars=1,
     volume_multiplier=1.0,
     require_prior_high_reclaim=True,
+    breakout_lookback_bars=6,
 ):
     setup, _ = evaluate_trend_pullback_entry(
         df,
@@ -126,6 +137,7 @@ def find_trend_pullback_entry(
         pullback_lookback_bars=pullback_lookback_bars,
         volume_multiplier=volume_multiplier,
         require_prior_high_reclaim=require_prior_high_reclaim,
+        breakout_lookback_bars=breakout_lookback_bars,
     )
     return setup
 

@@ -10,3 +10,6 @@ more-my-notes.txt
 data/*.csv
 trades.csv
 trades.json
+btc_1h_365d-results.txt
+eth_1h_365d-results.txt
+sol_1h_365d-results.txt
