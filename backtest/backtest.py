@@ -23,6 +23,9 @@ def run_backtest(
     max_hold_bars=20,
     min_net_reward_r=1.0,
     reward_risk=2.0,
+    stop_mode="atr",
+    swing_lookback_bars=6,
+    swing_stop_buffer_atr=0.25,
     pullback_tolerance_pct=0.0,
     pullback_lookback_bars=1,
     volume_multiplier=1.0,
@@ -46,6 +49,9 @@ def run_backtest(
         setup, rejection_reason = evaluate_trend_pullback_entry(
             window,
             reward_risk=reward_risk,
+            stop_mode=stop_mode,
+            swing_lookback_bars=swing_lookback_bars,
+            swing_stop_buffer_atr=swing_stop_buffer_atr,
             pullback_tolerance_pct=pullback_tolerance_pct,
             pullback_lookback_bars=pullback_lookback_bars,
             volume_multiplier=volume_multiplier,
@@ -152,6 +158,9 @@ def main():
     parser.add_argument("--max-hold-bars", type=int, default=20)
     parser.add_argument("--min-net-reward-r", type=float, default=1.0)
     parser.add_argument("--reward-risk", type=float, default=2.0)
+    parser.add_argument("--stop-mode", choices=["atr", "swing-low"], default="atr")
+    parser.add_argument("--swing-lookback-bars", type=int, default=6)
+    parser.add_argument("--swing-stop-buffer-atr", type=float, default=0.25)
     parser.add_argument("--pullback-tolerance-pct", type=float, default=0.0)
     parser.add_argument("--pullback-lookback-bars", type=int, default=1)
     parser.add_argument("--volume-multiplier", type=float, default=1.0)
@@ -174,6 +183,9 @@ def main():
         max_hold_bars=args.max_hold_bars,
         min_net_reward_r=args.min_net_reward_r,
         reward_risk=args.reward_risk,
+        stop_mode=args.stop_mode,
+        swing_lookback_bars=args.swing_lookback_bars,
+        swing_stop_buffer_atr=args.swing_stop_buffer_atr,
         pullback_tolerance_pct=args.pullback_tolerance_pct,
         pullback_lookback_bars=args.pullback_lookback_bars,
         volume_multiplier=args.volume_multiplier,

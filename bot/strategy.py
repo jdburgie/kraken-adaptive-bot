@@ -17,6 +17,9 @@ class TradeSetup:
 def evaluate_trend_pullback_entry(
     df,
     reward_risk=2.0,
+    stop_mode="atr",
+    swing_lookback_bars=6,
+    swing_stop_buffer_atr=0.25,
     pullback_tolerance_pct=0.0,
     pullback_lookback_bars=1,
     volume_multiplier=1.0,
@@ -102,11 +105,25 @@ def evaluate_trend_pullback_entry(
             return None, "no_local_high_breakout"
 
     entry = float(latest["close"])
-    stop = float(entry - latest["atr14"])
-    target = float(entry + reward_risk * latest["atr14"])
+    stop_mode = stop_mode.lower()
+
+    if stop_mode == "atr":
+        stop = float(entry - latest["atr14"])
+    elif stop_mode == "swing-low":
+        swing_lookback_bars = max(1, int(swing_lookback_bars))
+        if len(enriched) < swing_lookback_bars:
+            return None, "not_enough_swing_history"
+
+        swing_low = enriched["low"].tail(swing_lookback_bars).min()
+        stop = float(swing_low - latest["atr14"] * swing_stop_buffer_atr)
+    else:
+        return None, "invalid_stop_mode"
+
+    risk_per_unit = entry - stop
+    target = float(entry + reward_risk * risk_per_unit)
 
     if stop <= 0 or stop >= entry or target <= entry:
-        return None, "invalid_atr_levels"
+        return None, "invalid_stop_levels"
 
     return (
         TradeSetup(
@@ -115,7 +132,7 @@ def evaluate_trend_pullback_entry(
             stop=stop,
             target=target,
             regime=regime.value,
-            reason="uptrend pullback reclaimed prior high with volume confirmation",
+            reason=f"uptrend pullback breakout with {stop_mode} stop",
         ),
         "entry",
     )
@@ -124,6 +141,9 @@ def evaluate_trend_pullback_entry(
 def find_trend_pullback_entry(
     df,
     reward_risk=2.0,
+    stop_mode="atr",
+    swing_lookback_bars=6,
+    swing_stop_buffer_atr=0.25,
     pullback_tolerance_pct=0.0,
     pullback_lookback_bars=1,
     volume_multiplier=1.0,
@@ -133,6 +153,9 @@ def find_trend_pullback_entry(
     setup, _ = evaluate_trend_pullback_entry(
         df,
         reward_risk=reward_risk,
+        stop_mode=stop_mode,
+        swing_lookback_bars=swing_lookback_bars,
+        swing_stop_buffer_atr=swing_stop_buffer_atr,
         pullback_tolerance_pct=pullback_tolerance_pct,
         pullback_lookback_bars=pullback_lookback_bars,
         volume_multiplier=volume_multiplier,

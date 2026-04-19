@@ -8,7 +8,7 @@ the important work happens in the backtester before a strategy is trusted.
 - Long only
 - Trade only when the 50 EMA is above the 200 EMA
 - Enter on a 20 EMA pullback with a bullish close, local high breakout, and volume confirmation
-- Exit with a 1 ATR stop or 2 ATR target
+- Exit with a configurable ATR stop or swing-low stop and reward/risk target
 - Backtests include a configurable fee rate
 
 ## Setup
@@ -51,4 +51,5 @@ python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-tolerance-pct 0.002 -
 python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-tolerance-pct 0.003 --no-prior-high-reclaim --volume-multiplier 0.8 --diagnostics
 python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-lookback-bars 6 --pullback-tolerance-pct 0.003 --reward-risk 3 --volume-multiplier 0.8 --diagnostics
 python3 backtest/backtest.py data/sol_ohlcv.csv --breakout-lookback-bars 8 --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --stop-mode swing-low --swing-lookback-bars 6 --swing-stop-buffer-atr 0.25 --diagnostics
 ```
