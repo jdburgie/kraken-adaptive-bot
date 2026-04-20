@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-# Run with defaults (BTC/USD, 5m, 365 days, $1000 starting balance)
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+fi
 python -m bots.backtest "$@"
