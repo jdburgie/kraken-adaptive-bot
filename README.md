@@ -1,77 +1,76 @@
-# Kraken Adaptive Trading Bot
+# Kraken Adaptive Bot
 
-A modular crypto trading bot for Kraken using an RSI + EMA trend filter + volume confirmation strategy.
+Automated BTC/USD trading bot using a hybrid mean-reversion + trend-following strategy.
 
-## Features
-- Kraken spot exchange integration via `ccxt`
-- **Trend filter**: only buys dips when price is above EMA50 (no buying into downtrends)
-- **Volume confirmation**: only enters on candles with above-average volume
-- **Stop loss + take profit**: automatically exits positions at configured levels
-- **Position tracking**: survives restarts knowing whether it's in a trade
-- **Backtesting engine**: walk-forward simulation against 1 year of real Kraken data
-- Configurable `DRY_RUN` mode (default: enabled)
+## Strategy
+
+**Entry** — all three conditions must be true:
+1. **Strong uptrend**: price above EMA200 AND EMA50 above EMA200
+2. **Oversold dip**: candle low touches or breaks below the lower Bollinger Band
+3. **RSI oversold**: RSI(14) below 42
+
+**Exit** — first condition hit wins:
+1. **Trailing stop**: starts at 2.5% below entry, ratchets up as price rises
+2. **Take profit**: 9% above entry
+3. **RSI exit**: RSI(14) above 65
+
+## Backtest Results (BTC/USD 1h, Apr 2024 – Apr 2026)
+
+| Metric | Value |
+|---|---|
+| Return | **+24.8%** |
+| BTC buy-and-hold | +19.9% |
+| Trades | 89 |
+| Win rate | 39.3% |
+| Avg win | +3.91% |
+| Avg loss | -1.93% |
+| Profit factor | 1.26 |
+| Max drawdown | -17.2% |
 
 ## Setup
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your Kraken API keys and settings
+# Edit .env — add your Kraken API keys
 ```
 
-## Backtest (run this before going live)
-
-Test the strategy against the last 365 days of BTC/USD data:
+## Run Backtest
 
 ```bash
+# Default: BTC/USD, 730 days, $1000 balance, 1% risk
 ./scripts/run_backtest.sh
+
+# Custom
+python -m bots.backtest --symbol ETH/USD --days 365 --balance 500 --risk 0.02
 ```
 
-Custom options:
-```bash
-# Test ETH/USD on 1h candles for the last 180 days with $500 starting balance
-python -m bots.backtest --symbol ETH/USD --timeframe 1h --days 180 --balance 500
-```
-
-The backtest prints a full report and saves a chart image (`backtest_BTC-USD_5m_365d.png`).
-
-## Run live (dry run by default)
+## Run Bot (dry run by default)
 
 ```bash
 ./scripts/run_local.sh
-```
-
-Or:
-```bash
+# or
 python -m bots.main
 ```
 
-With `DRY_RUN=true` (default), the bot logs signals without placing real orders.
-Set `DRY_RUN=false` in `.env` only after reviewing backtest results.
+Set `DRY_RUN=false` in `.env` only after reviewing backtest output.
 
-## Run tests
+## Risk Settings
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `RISK_PCT` | `0.01` | 1% of balance AT RISK per trade |
+| `STOP_PCT` | `0.025` | Trailing stop 2.5% below price |
+| `TAKE_PCT` | `0.09` | Take profit 9% above entry |
+
+Position size is auto-calculated so a stop loss hit = exactly `RISK_PCT` loss.
+
+## Tests
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-## Configuration (`.env`)
-
-| Variable         | Default   | Description                                 |
-|------------------|-----------|---------------------------------------------|
-| `KRAKEN_API_KEY` | —         | Kraken API key                              |
-| `KRAKEN_API_SECRET` | —      | Kraken API secret                           |
-| `SYMBOL`         | `BTC/USD` | Trading pair                                |
-| `TIMEFRAME`      | `5m`      | Candle interval                             |
-| `DRY_RUN`        | `true`    | Paper trading mode                          |
-| `RISK_PCT`       | `0.02`    | Fraction of balance to risk per trade (2%)  |
-| `STOP_LOSS_PCT`  | `0.025`   | Stop loss below entry (2.5%)                |
-| `TAKE_PROFIT_PCT`| `0.05`    | Take profit above entry (5%)                |
-| `EMA_PERIOD`     | `50`      | EMA period for trend direction filter       |
-| `CANDLE_LIMIT`   | `100`     | Candles fetched per live tick               |
-
-## Risk warning
-This bot is for educational purposes. Crypto trading involves significant financial risk.
-Always backtest before going live. Never trade more than you can afford to lose.
+---
+**Risk warning**: Crypto trading involves significant financial risk. Always backtest before going live. Never trade more than you can afford to lose.

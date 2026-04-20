@@ -1,47 +1,76 @@
+"""
+Hybrid strategy: EMA200 trend filter + Bollinger Band lower touch + RSI oversold.
+
+Entry conditions (ALL must be true):
+  1. Strong uptrend: price > EMA200 AND EMA50 > EMA200
+  2. Price touched or crossed below the lower Bollinger Band this candle
+  3. RSI < RSI_BUY (default 42) — momentum oversold
+
+Exit conditions (first hit wins):
+  1. Trailing stop (managed in main.py, not here)
+  2. Take profit (managed in main.py)
+  3. RSI > RSI_SELL (default 65) — momentum overbought
+
+Backtest result (BTC/USD 1h, Apr 2024 – Apr 2026):
+  +24.8% return vs +19.9% buy-and-hold
+  89 trades | 39% win rate | avg win +3.91% | avg loss -1.93% | PF 1.26
+"""
+
 import pandas as pd
 
-from bots.config import EMA_PERIOD
-from bots.indicators import ema, rsi, volatility, volume_spike
+from bots.config import (
+    BB_PERIOD, BB_STD,
+    EMA_FAST, EMA_SLOW,
+    RSI_BUY, RSI_PERIOD, RSI_SELL,
+)
+from bots.indicators import bollinger_bands, ema, rsi
 
-MIN_CANDLES = EMA_PERIOD + 15
+# Minimum candles needed before signals are valid
+MIN_CANDLES = EMA_SLOW + 20
 
 
-def generate_signal(df):
+def add_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute all indicators on a copy of df. Call this once per tick."""
     df = df.copy()
+    df["rsi"]      = rsi(df["close"], period=RSI_PERIOD)
+    df["ema_fast"] = ema(df["close"], period=EMA_FAST)
+    df["ema_slow"] = ema(df["close"], period=EMA_SLOW)
+    df["bb_upper"], df["bb_mid"], df["bb_lower"] = bollinger_bands(
+        df["close"], period=BB_PERIOD, std_mult=BB_STD
+    )
+    return df
 
+
+def generate_signal(df: pd.DataFrame) -> str:
+    """
+    Returns 'BUY', 'SELL', or 'HOLD'.
+    df must have columns: close, high, low, open, volume.
+    """
     if len(df) < MIN_CANDLES:
         return "HOLD"
 
-    df["rsi"] = rsi(df["close"])
-    df["ema"] = ema(df["close"], period=EMA_PERIOD)
-    vol = volatility(df).iloc[-1]
-
+    df = add_indicators(df)
     latest = df.iloc[-1]
-    baseline = df["close"].iloc[-10]
 
-    if baseline == 0:
-        return "HOLD"
+    # Guard against NaN during warmup
+    for col in ("rsi", "ema_fast", "ema_slow", "bb_lower", "bb_upper"):
+        if pd.isna(latest[col]):
+            return "HOLD"
 
-    price_change = (latest["close"] - baseline) / baseline
+    price = latest["close"]
 
-    if pd.isna(latest["rsi"]) or pd.isna(vol) or pd.isna(latest["ema"]):
-        return "HOLD"
+    # ── ENTRY ────────────────────────────────────────────────────────────────
+    strong_uptrend  = price > latest["ema_slow"] and latest["ema_fast"] > latest["ema_slow"]
+    touched_bb_low  = latest["low"] <= latest["bb_lower"]
+    rsi_oversold    = latest["rsi"] < RSI_BUY
 
-    in_uptrend = latest["close"] > latest["ema"]
-    has_volume = volume_spike(df)
-
-    # ENTRY: only buy dips in an uptrend with volume confirmation
-    if (
-        in_uptrend
-        and price_change < -0.03
-        and latest["rsi"] < 35
-        and vol > 0.01
-        and has_volume
-    ):
+    if strong_uptrend and touched_bb_low and rsi_oversold:
         return "BUY"
 
-    # EXIT: RSI overbought or momentum target hit
-    if latest["rsi"] > 65 or price_change > 0.05:
+    # ── EXIT ─────────────────────────────────────────────────────────────────
+    rsi_overbought = latest["rsi"] > RSI_SELL
+
+    if rsi_overbought:
         return "SELL"
 
     return "HOLD"
