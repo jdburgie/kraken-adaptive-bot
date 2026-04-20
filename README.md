@@ -36,6 +36,12 @@ python3 scripts/download_ohlcv.py --exchange binance --symbol ETH/USDT --timefra
 python3 backtest/backtest.py data/btc_1h_365d.csv --starting-balance 1000 --risk-pct 0.01 --fee-rate 0.0026
 ```
 
+Date windows are supported for walk-forward checks:
+
+```bash
+python3 backtest/backtest.py data/btc_1h_365d.csv --start-date 2025-10-18 --end-date 2026-04-19 --diagnostics
+```
+
 Do not deploy live money until the strategy has been tested across multiple
 assets and market regimes with acceptable profit factor, drawdown, and
 expectancy after fees.
@@ -53,3 +59,28 @@ python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-lookback-bars 6 --pul
 python3 backtest/backtest.py data/sol_ohlcv.csv --breakout-lookback-bars 8 --diagnostics
 python3 backtest/backtest.py data/sol_ohlcv.csv --stop-mode swing-low --swing-lookback-bars 6 --swing-stop-buffer-atr 0.25 --diagnostics
 ```
+
+## Matrix Research
+
+Run the shared-baseline strategy across assets and walk-forward windows:
+
+```bash
+python3 backtest/run_matrix.py --config configs/shared_baseline.json
+```
+
+This writes:
+
+```text
+matrix-results-shared-baseline.csv
+matrix-ranking-results-shared-baseline.csv
+```
+
+Use filters for quick smoke checks:
+
+```bash
+python3 backtest/run_matrix.py --config configs/shared_baseline.json --asset BTC_1h --window full
+```
+
+Treat rankings as a triage tool, not proof. A good candidate should have
+positive expectancy, acceptable drawdown, enough trades, and survival across
+multiple assets and time windows.

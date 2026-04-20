@@ -11,3 +11,4 @@ data/*.csv
 trades.csv
 trades.json
 *-results*.txt
+*-results*.csv

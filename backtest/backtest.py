@@ -3,6 +3,8 @@ import os
 import sys
 from collections import Counter
 
+import pandas as pd
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -12,6 +14,24 @@ from bot.risk import units_for_fixed_risk
 from bot.indicators import add_core_indicators
 from bot.strategy import evaluate_trend_pullback_entry
 from backtest.metrics import summarize_trades
+
+
+def filter_date_range(df, start_date=None, end_date=None):
+    filtered = df
+
+    if start_date:
+        start = pd.to_datetime(start_date)
+        filtered = filtered[filtered["time"] >= start]
+
+    if end_date:
+        end = pd.to_datetime(end_date)
+        end_date_text = str(end_date)
+        if "T" not in end_date_text and " " not in end_date_text and end.time() == pd.Timestamp(0).time():
+            filtered = filtered[filtered["time"] < end + pd.Timedelta(days=1)]
+        else:
+            filtered = filtered[filtered["time"] <= end]
+
+    return filtered.reset_index(drop=True)
 
 
 def run_backtest(
@@ -151,6 +171,8 @@ def run_backtest(
 def main():
     parser = argparse.ArgumentParser(description="Backtest the trend pullback strategy.")
     parser.add_argument("csv", help="Path to an OHLCV CSV with time/open/high/low/close/volume columns.")
+    parser.add_argument("--start-date", help="Only backtest candles on or after this date/time.")
+    parser.add_argument("--end-date", help="Only backtest candles on or before this date/time.")
     parser.add_argument("--starting-balance", type=float, default=1000)
     parser.add_argument("--risk-pct", type=float, default=0.01)
     parser.add_argument("--max-position-pct", type=float, default=1.0)
@@ -174,6 +196,7 @@ def main():
     args = parser.parse_args()
 
     df = load_ohlcv_csv(args.csv)
+    df = filter_date_range(df, args.start_date, args.end_date)
     trades, metrics, diagnostics = run_backtest(
         df,
         starting_balance=args.starting_balance,
