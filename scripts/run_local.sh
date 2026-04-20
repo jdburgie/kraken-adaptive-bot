@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# Local dev runner — activates venv if present, then starts the bot
-if [ -d ".venv" ]; then
-    source .venv/bin/activate
-fi
-python -m bots.main
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV="$SCRIPT_DIR/../.venv/bin/python"
+cd "$SCRIPT_DIR/.."
+"$VENV" -m bots.main
