@@ -2,4 +2,6 @@ ccxt
 pandas
 numpy
 ta
-python-dotenvmatplotlib
+python-dotenv
+matplotlib
+yfinance
