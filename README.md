@@ -84,3 +84,9 @@ python3 backtest/run_matrix.py --config configs/shared_baseline.json --asset BTC
 Treat rankings as a triage tool, not proof. A good candidate should have
 positive expectancy, acceptable drawdown, enough trades, and survival across
 multiple assets and time windows.
+
+Use the broader research matrix to compare strategy variants:
+
+```bash
+python3 backtest/run_matrix.py --config configs/research_matrix.json
+```

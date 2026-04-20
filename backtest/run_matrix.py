@@ -125,8 +125,12 @@ def run_detail(config, asset_filter, window_filter, strategy_filter):
             for strategy in strategies:
                 if not selected(strategy["name"], strategy_filter):
                     continue
+                if not selected(asset_name, strategy.get("assets")):
+                    continue
                 for window in windows:
                     if not selected(window["name"], window_filter):
+                        continue
+                    if not selected(window["name"], strategy.get("windows")):
                         continue
                     rows.append(
                         {
@@ -170,6 +174,10 @@ def run_detail(config, asset_filter, window_filter, strategy_filter):
             for strategy in strategies:
                 strategy_name = strategy["name"]
                 if not selected(strategy_name, strategy_filter):
+                    continue
+                if not selected(asset_name, strategy.get("assets")):
+                    continue
+                if not selected(window_name, strategy.get("windows")):
                     continue
 
                 params = strategy.get("params", {})
