@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
-# Deploy latest code from claude/adaptive-bot and restart the bot.
-# Run from the EC2 instance: ./deployment/update.sh
 set -euo pipefail
 
-INSTALL_DIR="/home/ubuntu/kraken-adaptive-bot"
+# Detect user
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    [ "${ID:-}" = "amzn" ] && BOT_USER="ec2-user" || BOT_USER="ubuntu"
+else
+    BOT_USER="ec2-user"
+fi
+
+INSTALL_DIR="/home/$BOT_USER/kraken-adaptive-bot"
 BRANCH="claude/adaptive-bot"
 SERVICE="crypto-bot"
 
-echo "Pulling latest code..."
+echo "Pulling latest from $BRANCH..."
 cd "$INSTALL_DIR"
 git fetch origin
 git checkout "$BRANCH"
@@ -22,5 +28,4 @@ sleep 2
 sudo systemctl status "$SERVICE" --no-pager
 
 echo ""
-echo "Done. Watch logs with:"
-echo "  sudo journalctl -u $SERVICE -f"
+echo "Live logs: sudo journalctl -u $SERVICE -f"
