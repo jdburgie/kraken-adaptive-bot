@@ -180,7 +180,49 @@ def run_detail(config, asset_filter, window_filter, strategy_filter):
                 if not selected(window_name, strategy.get("windows")):
                     continue
 
-                params = strategy.get("params", {})
+                params = dict(strategy.get("params", {}))
+                benchmark_csv = params.pop("benchmark_csv", None)
+                benchmark_df = None
+
+                if benchmark_csv:
+                    if not os.path.exists(benchmark_csv):
+                        rows.append(
+                            {
+                                "strategy": strategy_name,
+                                "asset": asset_name,
+                                "csv": csv_path,
+                                "window": window_name,
+                                "start_date": window.get("start_date") or "",
+                                "end_date": window.get("end_date") or "",
+                                "status": "missing_benchmark_csv",
+                                "rows": len(window_df),
+                                "trades": 0,
+                                "wins": 0,
+                                "losses": 0,
+                                "win_rate": 0,
+                                "net_pnl": 0,
+                                "ending_balance": 0,
+                                "return_pct": 0,
+                                "profit_factor": 0,
+                                "max_drawdown_pct": 0,
+                                "expectancy": 0,
+                                "score": 0,
+                            }
+                        )
+                        continue
+
+                    if benchmark_csv not in data_cache:
+                        data_cache[benchmark_csv] = load_ohlcv_csv(benchmark_csv)
+
+                    benchmark_df = filter_date_range(
+                        data_cache[benchmark_csv],
+                        window.get("start_date"),
+                        window.get("end_date"),
+                    )
+
+                if benchmark_df is not None:
+                    params["benchmark_df"] = benchmark_df
+
                 trades, metrics, _ = run_backtest(window_df, **params)
 
                 rows.append(

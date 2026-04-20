@@ -90,3 +90,10 @@ Use the broader research matrix to compare strategy variants:
 ```bash
 python3 backtest/run_matrix.py --config configs/research_matrix.json
 ```
+
+Test benchmark-gated variants that only allow entries when BTC is also in a
+strong uptrend:
+
+```bash
+python3 backtest/run_matrix.py --config configs/benchmark_gate_matrix.json
+```

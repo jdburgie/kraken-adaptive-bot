@@ -34,6 +34,45 @@ def filter_date_range(df, start_date=None, end_date=None):
     return filtered.reset_index(drop=True)
 
 
+def benchmark_gate_reason(
+    benchmark_df,
+    current_time,
+    min_ema50_slope_pct=0.001,
+    ema_slope_lookback_bars=24,
+    require_ema_stack=True,
+):
+    if benchmark_df is None:
+        return None
+
+    if benchmark_df.empty:
+        return "benchmark_not_ready"
+
+    index = benchmark_df["time"].searchsorted(pd.to_datetime(current_time), side="right") - 1
+    ema_slope_lookback_bars = max(1, int(ema_slope_lookback_bars))
+
+    if index < ema_slope_lookback_bars:
+        return "benchmark_not_ready"
+
+    latest = benchmark_df.iloc[index]
+    prior = benchmark_df.iloc[index - ema_slope_lookback_bars]
+    required = ["ema20", "ema50", "ema200"]
+
+    if latest[required].isna().any() or pd.isna(prior["ema50"]):
+        return "benchmark_not_ready"
+
+    if require_ema_stack and not (latest["ema20"] > latest["ema50"] > latest["ema200"]):
+        return "benchmark_weak_ema_stack"
+
+    if prior["ema50"] <= 0:
+        return "benchmark_not_ready"
+
+    ema50_slope_pct = (latest["ema50"] - prior["ema50"]) / prior["ema50"]
+    if ema50_slope_pct < min_ema50_slope_pct:
+        return "benchmark_weak_ema50_slope"
+
+    return None
+
+
 def run_backtest(
     df,
     starting_balance=1000,
@@ -55,9 +94,16 @@ def run_backtest(
     ema_slope_lookback_bars=24,
     max_extension_atr=0.75,
     min_body_atr=0.10,
+    benchmark_df=None,
+    benchmark_min_ema50_slope_pct=0.001,
+    benchmark_ema_slope_lookback_bars=24,
+    benchmark_require_ema_stack=True,
     collect_diagnostics=False,
 ):
     df = add_core_indicators(df)
+    if benchmark_df is not None:
+        benchmark_df = add_core_indicators(benchmark_df)
+
     balance = starting_balance
     trades = []
     diagnostics = Counter()
@@ -86,6 +132,19 @@ def run_backtest(
         if not setup:
             if collect_diagnostics:
                 diagnostics[rejection_reason] += 1
+            i += 1
+            continue
+
+        benchmark_rejection_reason = benchmark_gate_reason(
+            benchmark_df,
+            window.iloc[-1]["time"],
+            min_ema50_slope_pct=benchmark_min_ema50_slope_pct,
+            ema_slope_lookback_bars=benchmark_ema_slope_lookback_bars,
+            require_ema_stack=benchmark_require_ema_stack,
+        )
+        if benchmark_rejection_reason:
+            if collect_diagnostics:
+                diagnostics[benchmark_rejection_reason] += 1
             i += 1
             continue
 
@@ -192,11 +251,20 @@ def main():
     parser.add_argument("--ema-slope-lookback-bars", type=int, default=24)
     parser.add_argument("--max-extension-atr", type=float, default=0.75)
     parser.add_argument("--min-body-atr", type=float, default=0.10)
+    parser.add_argument("--benchmark-csv", help="Optional benchmark OHLCV CSV used as a market regime gate.")
+    parser.add_argument("--benchmark-min-ema50-slope-pct", type=float, default=0.001)
+    parser.add_argument("--benchmark-ema-slope-lookback-bars", type=int, default=24)
+    parser.add_argument("--no-benchmark-ema-stack", action="store_true")
     parser.add_argument("--diagnostics", action="store_true")
     args = parser.parse_args()
 
     df = load_ohlcv_csv(args.csv)
     df = filter_date_range(df, args.start_date, args.end_date)
+    benchmark_df = None
+    if args.benchmark_csv:
+        benchmark_df = load_ohlcv_csv(args.benchmark_csv)
+        benchmark_df = filter_date_range(benchmark_df, args.start_date, args.end_date)
+
     trades, metrics, diagnostics = run_backtest(
         df,
         starting_balance=args.starting_balance,
@@ -218,6 +286,10 @@ def main():
         ema_slope_lookback_bars=args.ema_slope_lookback_bars,
         max_extension_atr=args.max_extension_atr,
         min_body_atr=args.min_body_atr,
+        benchmark_df=benchmark_df,
+        benchmark_min_ema50_slope_pct=args.benchmark_min_ema50_slope_pct,
+        benchmark_ema_slope_lookback_bars=args.benchmark_ema_slope_lookback_bars,
+        benchmark_require_ema_stack=not args.no_benchmark_ema_stack,
         collect_diagnostics=args.diagnostics,
     )
 
