@@ -2,26 +2,18 @@
 Description=Kraken Adaptive Crypto Bot
 After=network.target
 Wants=network-online.target
-
-[Service]
-Type=simple
-User=ubuntu
-Group=ubuntu
-WorkingDirectory=/home/ubuntu/kraken-adaptive-bot
-
-# Load environment from .env file
-EnvironmentFile=/home/ubuntu/kraken-adaptive-bot/.env
-
-# Use the venv python
-ExecStart=/home/ubuntu/kraken-adaptive-bot/.venv/bin/python -m bots.main
-
-# Restart automatically on crash, but not on clean exit (e.g. Ctrl+C)
-Restart=on-failure
-RestartSec=30
 StartLimitIntervalSec=300
 StartLimitBurst=5
 
-# Logging — view with: journalctl -u crypto-bot -f
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/kraken-adaptive-bot
+EnvironmentFile=/home/ec2-user/kraken-adaptive-bot/.env
+ExecStart=/home/ec2-user/kraken-adaptive-bot/.venv/bin/python -m bots.main
+Restart=on-failure
+RestartSec=30
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=crypto-bot
