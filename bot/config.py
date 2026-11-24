@@ -6,6 +6,10 @@ load_dotenv()
 API_KEY = os.getenv("KRAKEN_API_KEY")
 API_SECRET = os.getenv("KRAKEN_API_SECRET")
 
+# Paper mode by default. Must be explicitly disabled to trade real money,
+# and real trading requires API keys (enforced in exchange.get_exchange).
+DRY_RUN = os.getenv("DRY_RUN", "true").lower() in {"1", "true", "yes", "on"}
+
 SYMBOL = os.environ["SYMBOL"]
 
 if not SYMBOL:
