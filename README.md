@@ -1,77 +1,99 @@
 # Kraken Adaptive Trading Bot
 
-A modular crypto trading bot for Kraken using an RSI + EMA trend filter + volume confirmation strategy.
+A Kraken crypto trading research bot. The live loop is deliberately simple;
+the important work happens in the backtester before a strategy is trusted.
 
-## Features
-- Kraken spot exchange integration via `ccxt`
-- **Trend filter**: only buys dips when price is above EMA50 (no buying into downtrends)
-- **Volume confirmation**: only enters on candles with above-average volume
-- **Stop loss + take profit**: automatically exits positions at configured levels
-- **Position tracking**: survives restarts knowing whether it's in a trade
-- **Backtesting engine**: walk-forward simulation against 1 year of real Kraken data
-- Configurable `DRY_RUN` mode (default: enabled)
+## Current Strategy
+
+- Long only
+- Trade only when the 50 EMA is above the 200 EMA
+- Enter on a 20 EMA pullback with a bullish close, local high breakout, and volume confirmation
+- Exit with a configurable ATR stop or swing-low stop and reward/risk target
+- Backtests include a configurable fee rate
 
 ## Setup
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-# Edit .env with your Kraken API keys and settings
+python3 -m pip install -r requirements.txt
+cp .env.example.txt .env
 ```
 
-## Backtest (run this before going live)
+## Download Candles
 
-Test the strategy against the last 365 days of BTC/USD data:
+Binance may return HTTP 451 from restricted locations. The downloader now tries
+US-accessible fallback exchanges and USD/USDC quote pairs automatically, so the
+examples below work even when `SOL/USDT` is not available on the selected venue.
 
 ```bash
-./scripts/run_backtest.sh
+python3 scripts/download_ohlcv.py --exchange binance --symbol SOL/USDT --timeframe 5m --days 365 --output data/sol_5m_365d.csv
+python3 scripts/download_ohlcv.py --exchange binance --symbol BTC/USDT --timeframe 1h --days 365 --output data/btc_1h_365d.csv
+python3 scripts/download_ohlcv.py --exchange binance --symbol ETH/USDT --timeframe 1h --days 365 --output data/eth_1h_365d.csv
 ```
 
-Custom options:
-```bash
-# Test ETH/USD on 1h candles for the last 180 days with $500 starting balance
-python -m bots.backtest --symbol ETH/USD --timeframe 1h --days 180 --balance 500
-```
-
-The backtest prints a full report and saves a chart image (`backtest_BTC-USD_5m_365d.png`).
-
-## Run live (dry run by default)
+## Backtest
 
 ```bash
-./scripts/run_local.sh
+python3 backtest/backtest.py data/btc_1h_365d.csv --starting-balance 1000 --risk-pct 0.01 --fee-rate 0.0026
 ```
 
-Or:
-```bash
-python -m bots.main
-```
-
-With `DRY_RUN=true` (default), the bot logs signals without placing real orders.
-Set `DRY_RUN=false` in `.env` only after reviewing backtest results.
-
-## Run tests
+Date windows are supported for walk-forward checks:
 
 ```bash
-python -m unittest discover -s tests
+python3 backtest/backtest.py data/btc_1h_365d.csv --start-date 2025-10-18 --end-date 2026-04-19 --diagnostics
 ```
 
-## Configuration (`.env`)
+Do not deploy live money until the strategy has been tested across multiple
+assets and market regimes with acceptable profit factor, drawdown, and
+expectancy after fees.
 
-| Variable         | Default   | Description                                 |
-|------------------|-----------|---------------------------------------------|
-| `KRAKEN_API_KEY` | —         | Kraken API key                              |
-| `KRAKEN_API_SECRET` | —      | Kraken API secret                           |
-| `SYMBOL`         | `BTC/USD` | Trading pair                                |
-| `TIMEFRAME`      | `5m`      | Candle interval                             |
-| `DRY_RUN`        | `true`    | Paper trading mode                          |
-| `RISK_PCT`       | `0.02`    | Fraction of balance to risk per trade (2%)  |
-| `STOP_LOSS_PCT`  | `0.025`   | Stop loss below entry (2.5%)                |
-| `TAKE_PROFIT_PCT`| `0.05`    | Take profit above entry (5%)                |
-| `EMA_PERIOD`     | `50`      | EMA period for trend direction filter       |
-| `CANDLE_LIMIT`   | `100`     | Candles fetched per live tick               |
+The backtester caps position size to available cash by default. To test smaller
+cash exposure, lower `--max-position-pct`; for example `--max-position-pct 0.25`.
 
-## Risk warning
-This bot is for educational purposes. Crypto trading involves significant financial risk.
-Always backtest before going live. Never trade more than you can afford to lose.
+Useful research flags:
+
+```bash
+python3 backtest/backtest.py data/sol_ohlcv.csv --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-tolerance-pct 0.002 --reward-risk 3 --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-tolerance-pct 0.003 --no-prior-high-reclaim --volume-multiplier 0.8 --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --pullback-lookback-bars 6 --pullback-tolerance-pct 0.003 --reward-risk 3 --volume-multiplier 0.8 --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --breakout-lookback-bars 8 --diagnostics
+python3 backtest/backtest.py data/sol_ohlcv.csv --stop-mode swing-low --swing-lookback-bars 6 --swing-stop-buffer-atr 0.25 --diagnostics
+```
+
+## Matrix Research
+
+Run the shared-baseline strategy across assets and walk-forward windows:
+
+```bash
+python3 backtest/run_matrix.py --config configs/shared_baseline.json
+```
+
+This writes:
+
+```text
+matrix-results-shared-baseline.csv
+matrix-ranking-results-shared-baseline.csv
+```
+
+Use filters for quick smoke checks:
+
+```bash
+python3 backtest/run_matrix.py --config configs/shared_baseline.json --asset BTC_1h --window full
+```
+
+Treat rankings as a triage tool, not proof. A good candidate should have
+positive expectancy, acceptable drawdown, enough trades, and survival across
+multiple assets and time windows.
+
+Use the broader research matrix to compare strategy variants:
+
+```bash
+python3 backtest/run_matrix.py --config configs/research_matrix.json
+```
+
+Test benchmark-gated variants that only allow entries when BTC is also in a
+strong uptrend:
+
+```bash
+python3 backtest/run_matrix.py --config configs/benchmark_gate_matrix.json
+```

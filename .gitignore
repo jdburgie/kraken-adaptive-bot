@@ -3,3 +3,12 @@ __pycache__/
 .env
 venv/
 .DS_Store
+my-notes.md
+warning.txt
+bot/more-my-notes.txt
+more-my-notes.txt
+data/*.csv
+trades.csv
+trades.json
+*-results*.txt
+*-results*.csv

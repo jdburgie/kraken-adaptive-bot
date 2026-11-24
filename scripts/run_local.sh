@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-python -m bots.main
+export $(cat .env | xargs)
+python3 -m bot.main
